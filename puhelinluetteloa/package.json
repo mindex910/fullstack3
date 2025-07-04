@@ -1,0 +1,24 @@
+{
+  "name": "puhelinluetteloa",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mindex910/fullstack3.git"
+  },
+  "author": "Mindex",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mindex910/fullstack3/issues"
+  },
+  "homepage": "https://github.com/mindex910/fullstack3/puhelinluetteloa",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
