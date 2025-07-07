@@ -71,16 +71,10 @@ app.post("/api/persons", (request, response) => {
     });
   }
 
-  console.log("test");
-
-  console.log(persons.length);
-  const alreadyExists = persons.includes((person) => {
-    console.log("tets");
-    console.log(person.name, body.name);
+  const alreadyExists = persons.some((person) => {
     return person.name === body.name || person.number === body.number;
   });
 
-  console.log(alreadyExists);
   if (alreadyExists) {
     return response.status(400).json({
       error: "content already exists",
