@@ -9,7 +9,6 @@ app.use(morgan("tiny"));
 app.use(cors());
 app.use(express.static("dist"));
 
-
 app.get("/info", (request, response) => {
   response.send(`
     <html>
@@ -29,11 +28,13 @@ app.get("/api/persons", (request, response) => {
 
 app.get("/api/persons/:id", (request, response) => {
   const id = request.params.id;
-  Person.findOne({_id: id})
-  .then((person) => {
-    response.json(person);
-  })
-  .catch(()=>{response.status(404).end()})
+  Person.findOne({ _id: id })
+    .then((person) => {
+      response.json(person);
+    })
+    .catch(() => {
+      response.status(404).end();
+    });
 });
 
 app.delete("/api/persons/:id", (request, response) => {
@@ -41,12 +42,6 @@ app.delete("/api/persons/:id", (request, response) => {
   persons = persons.filter((person) => person.id !== id);
   response.status(204).end();
 });
-
-const generateId = () => {
-  const maxId =
-    persons.length > 0 ? Math.max(...persons.map((n) => Number(n.id))) : 0;
-  return String(maxId + 1);
-};
 
 app.post("/api/persons", (request, response) => {
   const body = request.body;
@@ -56,7 +51,7 @@ app.post("/api/persons", (request, response) => {
       error: "content missing",
     });
   }
-
+  /* if name already exists:
   const alreadyExists = persons.some((person) => {
     return person.name === body.name || person.number === body.number;
   });
@@ -65,15 +60,14 @@ app.post("/api/persons", (request, response) => {
     return response.status(400).json({
       error: "content already exists",
     });
-  }
-
-  const person = {
-    id: generateId(),
+  } */
+  const person = new Person({
     name: body.name,
     number: body.number,
-  };
-  persons = persons.concat(person);
-  response.json(person);
+  });
+  person.save().then((savedPerson) => {
+    response.json(savedPerson);
+  });
 });
 
 const PORT = process.env.PORT;
