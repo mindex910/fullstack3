@@ -3,13 +3,15 @@ const morgan = require("morgan");
 const cors = require("cors");
 const app = express();
 const Person = require("./models/persons");
+const persons = require("./models/persons");
 require("dotenv").config();
+app.use(express.static("dist"));
 app.use(express.json());
 app.use(morgan("tiny"));
 app.use(cors());
-app.use(express.static("dist"));
 
 app.get("/info", (request, response) => {
+  Person.find({}).then((persons) => {
   response.send(`
     <html>
       <body>
@@ -17,18 +19,20 @@ app.get("/info", (request, response) => {
         <p>${Date()}</p>
       </body>
     </html>
-  `);
+  `);  })
+
 });
 
 app.get("/api/persons", (request, response) => {
-  Person.find({}).then((persons) => {
-    response.json(persons);
-  });
+  Person.find({})
+    .then((persons) => {
+      response.json(persons);
+    })
+    .catch((error) => next(error));
 });
 
-app.get("/api/persons/:id", (request, response) => {
-  const id = request.params.id;
-  Person.findOne({ _id: id })
+app.get("/api/persons/:id", (request, response, next) => {
+  Person.findById(request.params.id)
     .then((person) => {
       if (person) {
         response.json(person);
@@ -36,45 +40,68 @@ app.get("/api/persons/:id", (request, response) => {
         response.status(404).end();
       }
     })
-    .catch((error) => {
-      console.log(error);
-      response.status(400).send({ error: "malformatted id" });
-    });
+    .catch((error) => next(error));
 });
 
 app.delete("/api/persons/:id", (request, response) => {
   const id = request.params.id;
-  Person.findByIdAndDelete(id).then((person) => {
-    response.status(204).end();
-  });
+  Person.findByIdAndDelete(id)
+    .then((person) => {
+      response.status(204).end();
+    })
+    .catch((error) => next(error));
 });
 
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", (request, response, next) => {
   const body = request.body;
   console.log(body);
-  if (!body.name || !body.number) {
-    return response.status(400).json({
-      error: "content missing",
-    });
+  if (
+    !body.name ||
+    !body.number ||
+    body.name.length === 0 ||
+    body.number.length === 0
+  ) {
+    const error = { name: "content missing" };
+    next(error);
+    return;
   }
-  /* if name already exists:
-  const alreadyExists = persons.some((person) => {
-    return person.name === body.name || person.number === body.number;
-  });
 
-  if (alreadyExists) {
-    return response.status(400).json({
-      error: "content already exists",
-    });
-  } */
   const person = new Person({
     name: body.name,
     number: body.number,
   });
-  person.save().then((savedPerson) => {
-    response.json(savedPerson);
-  });
+  person
+    .save()
+    .then((savedPerson) => {
+      response.json(savedPerson);
+    })
+    .catch((error) => next(error));
 });
+
+app.put("/api/persons/:id", (request, response, next) => {
+  const body = request.body;
+  const payload = { number: body.number };
+  console.log(payload)
+  Person.findByIdAndUpdate(request.params.id, payload, {new: true})
+    .then((updatedPerson) => {
+      console.log(updatedPerson)
+      response.json(updatedPerson);
+    })
+    .catch((error) => next(error));
+});
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+  if (error.name === "content missing") {
+    return response.status(400).send({ error: "name and number required" });
+  }
+  next(error);
+};
+app.use(errorHandler);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
