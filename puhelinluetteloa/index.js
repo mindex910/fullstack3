@@ -30,17 +30,23 @@ app.get("/api/persons/:id", (request, response) => {
   const id = request.params.id;
   Person.findOne({ _id: id })
     .then((person) => {
-      response.json(person);
+      if (person) {
+        response.json(person);
+      } else {
+        response.status(404).end();
+      }
     })
-    .catch(() => {
-      response.status(404).end();
+    .catch((error) => {
+      console.log(error);
+      response.status(400).send({ error: "malformatted id" });
     });
 });
 
 app.delete("/api/persons/:id", (request, response) => {
   const id = request.params.id;
-  persons = persons.filter((person) => person.id !== id);
-  response.status(204).end();
+  Person.findByIdAndDelete(id).then((person) => {
+    response.status(204).end();
+  });
 });
 
 app.post("/api/persons", (request, response) => {
